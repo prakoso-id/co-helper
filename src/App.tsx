@@ -1,10 +1,8 @@
 import { ChatWindow } from "./components/ChatWindow";
 import { SourceSelector } from "./components/SourceSelector";
 import { VadIndicator } from "./components/VadIndicator";
-import { useChatStore } from "./store/chat";
 
 export default function App() {
-  const status = useChatStore((s) => s.status);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden">

@@ -26,8 +26,6 @@ interface ChatState {
   clearMessages: () => void;
 }
 
-const genId = () => Math.random().toString(36).substring(2, 11);
-
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   status: "idle",
