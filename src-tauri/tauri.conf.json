@@ -1,0 +1,35 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nickelpack/tauri/dev/crates/tauri-config-schema/schema.json",
+  "productName": "co-helper",
+  "version": "0.1.0",
+  "identifier": "com.prakosodev.cohelper",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "CO-Helper",
+        "width": 400,
+        "height": 600,
+        "resizable": true,
+        "decorations": true,
+        "skipTaskbar": false,
+        "alwaysOnTop": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png"
+    ]
+  }
+}

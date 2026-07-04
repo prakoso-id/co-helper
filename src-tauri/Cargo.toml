@@ -1,0 +1,37 @@
+[package]
+name = "co-helper"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "co_helper_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-global-shortcut = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+futures = "0.3"
+toml = "0.8"
+directories = "5"
+uuid = { version = "1", features = ["v4"] }
+
+# Audio (M2+) — uncomment when implementing
+# cpal = "0.15"
+# rubato = "0.16"
+# voice_activity_detector = "0.1"
+# ort = "2.0.0-rc.12"
+
+# STT (M4+) — uncomment when implementing
+# whisper-rs = "0.14"
+
+[features]
+default = []
+cuda = []
+metal = []
