@@ -39,6 +39,7 @@ async fn run_pipeline(app: AppHandle, state: Arc<Mutex<AppState>>, mut rx: tokio
     let cfg = vad::VadConfig::default();
     let mut vad_mic = vad::Vad::new(&cfg).ok();
     let mut vad_sys = vad::Vad::new(&cfg).ok();
+    let config = app.state::<Config>().inner().clone();
 
     while let Some(frame) = rx.recv().await {
         let mono = resample::to_mono(&frame.samples, frame.channels);
@@ -54,20 +55,69 @@ async fn run_pipeline(app: AppHandle, state: Arc<Mutex<AppState>>, mut rx: tokio
                 capture::AudioSource::Mic => "mic",
                 capture::AudioSource::System => "system",
             };
-            let _ = app.emit("transcript", serde_json::json!({
-                "source": label,
-                "samples": seg.len(),
-                // M5 wires actual STT; emit raw count for now
-            }));
             let _ = app.emit("vad_status", "processing");
+
+            // M5: STT → LLM loop
+            let transcript = {
+                let s = state.lock().await;
+                match &s.whisper {
+                    Some(whisper) => whisper.transcribe(&seg).await.unwrap_or_default(),
+                    None => String::new(),
+                }
+            };
+
+            if !transcript.is_empty() {
+                let _ = app.emit("transcript", serde_json::json!({
+                    "source": label,
+                    "text": transcript,
+                }));
+
+                // Build messages: system prompt + transcript as user message
+                let msg = Message {
+                    role: "user".to_string(),
+                    content: transcript,
+                };
+                let (full_messages, model, url) = {
+                    let mut s = state.lock().await;
+                    let mut ctx = s.get_context(config.llm.max_context_messages);
+                    ctx.insert(0, Message {
+                        role: "system".to_string(),
+                        content: config.llm.system_prompt.clone(),
+                    });
+                    ctx.push(msg);
+                    (ctx, config.llm.model.clone(), config.llm.url.clone())
+                };
+                let abort_token = state.lock().await.abort_token.clone();
+                let segment_id = uuid::Uuid::new_v4().to_string();
+                let _ = app.emit("llm_start", serde_json::json!({"segmentId": segment_id}));
+
+                let app2 = app.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = router_client::stream_chat(
+                        &url, &model, full_messages, &app2, &segment_id, abort_token,
+                    ).await {
+                        let _ = app2.emit("error", serde_json::json!({"source": "llm", "message": e}));
+                    }
+                });
+            }
+
             let _ = app.emit("vad_status", "listening");
         }
     }
     // drain: flush VADs
     for (src, v) in [("mic", vad_mic.as_mut()), ("system", vad_sys.as_mut())] {
         if let Some(v) = v {
-            for _seg in v.flush() {
-                let _ = app.emit("transcript", serde_json::json!({"source":src,"samples":0}));
+            for seg in v.flush() {
+                let transcript = {
+                    let s = state.lock().await;
+                    match &s.whisper {
+                        Some(whisper) => whisper.transcribe(&seg).await.unwrap_or_default(),
+                        None => String::new(),
+                    }
+                };
+                if !transcript.is_empty() {
+                    let _ = app.emit("transcript", serde_json::json!({"source":src,"text":transcript}));
+                }
             }
         }
     }
