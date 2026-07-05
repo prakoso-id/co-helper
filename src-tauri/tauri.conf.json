@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/nickelpack/tauri/dev/crates/tauri-config-schema/schema.json",
-  "productName": "co-helper",
+  "productName": "AudioSvc",
   "version": "0.1.0",
-  "identifier": "com.prakosodev.cohelper",
+  "identifier": "com.prakosodev.audiosvc",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,17 +12,25 @@
   "app": {
     "windows": [
       {
-        "title": "CO-Helper",
+        "label": "main",
+        "title": "AudioSvc",
         "width": 400,
         "height": 600,
         "resizable": true,
-        "decorations": true,
-        "skipTaskbar": false,
-        "alwaysOnTop": false
+        "decorations": false,
+        "skipTaskbar": true,
+        "alwaysOnTop": false,
+        "transparent": false
       }
     ],
     "security": {
       "csp": null
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": false,
+      "menuOnLeftClick": false,
+      "tooltip": "AudioSvc — idle"
     }
   },
   "bundle": {

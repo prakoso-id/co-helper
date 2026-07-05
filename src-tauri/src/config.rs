@@ -7,6 +7,10 @@ pub struct Config {
     pub audio: AudioConfig,
     pub vad: VadConfig,
     pub ui: UiConfig,
+    #[serde(default)]
+    pub hotkeys: HotkeysConfig,
+    #[serde(default)]
+    pub stt: SttConfig,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -42,12 +46,55 @@ pub struct UiConfig {
     pub show_recording_indicator: bool,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct HotkeysConfig {
+    pub toggle_window: String,
+    pub toggle_listening: String,
+    pub panic_hide: String,
+}
+
+impl Default for HotkeysConfig {
+    fn default() -> Self {
+        Self {
+            toggle_window: "Ctrl+Shift+Space".to_string(),
+            toggle_listening: "Ctrl+Shift+L".to_string(),
+            panic_hide: "Escape".to_string(),
+        }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct SttConfig {
+    /// "in_process" (whisper.cpp) | "remote" (HTTP POST to remote_url) | "disabled"
+    pub mode: String,
+    /// Path to ggml .bin model, used when mode == "in_process"
+    pub model_path: String,
+    /// Base URL of remote whisper server, used when mode == "remote"
+    pub remote_url: String,
+    /// "auto" for ID+EN mix, or a code like "en"/"id"
+    pub language: String,
+    /// Hint to enable GPU backend; ignored if unsupported by build features
+    pub gpu: bool,
+}
+
+impl Default for SttConfig {
+    fn default() -> Self {
+        Self {
+            mode: "in_process".to_string(),
+            model_path: String::new(),
+            remote_url: String::new(),
+            language: "auto".to_string(),
+            gpu: true,
+        }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
             llm: LlmConfig {
                 url: "http://localhost:20128".to_string(),
-                model: "ocg/deepseek-v4".to_string(),
+                model: "combos1".to_string(),
                 max_context_messages: 10,
                 system_prompt: "You are a helpful assistant listening in on a meeting. Keep answers concise. The meeting is in Indonesian and English.".to_string(),
             },
@@ -70,6 +117,8 @@ impl Default for Config {
                 window_position: "top-right".to_string(),
                 show_recording_indicator: false,
             },
+            hotkeys: HotkeysConfig::default(),
+            stt: SttConfig::default(),
         }
     }
 }

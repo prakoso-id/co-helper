@@ -22,16 +22,20 @@ toml = "0.8"
 directories = "5"
 uuid = { version = "1", features = ["v4"] }
 
-# Audio (M2+) — uncomment when implementing
-# cpal = "0.15"
-# rubato = "0.16"
-# voice_activity_detector = "0.1"
-# ort = "2.0.0-rc.12"
+# Audio (M2+)
+cpal = "0.15"
+rubato = "0.16"
+voice_activity_detector = "0.2"
+# ort pinned by voice_activity_detector 0.2 (=2.0.0-rc.10); rc.12 breaks ureq TLS
+ort = "2.0.0-rc.10"
 
-# STT (M4+) — uncomment when implementing
-# whisper-rs = "0.14"
+# STT (M4+) — whisper-rs, feature-gated so non-STT builds need no libclang
+whisper-rs = { version = "0.14", optional = true }
 
 [features]
 default = []
-cuda = []
-metal = []
+# In-process whisper.cpp STT. Needs libclang-dev to build whisper-rs-sys.
+stt = ["dep:whisper-rs"]
+# GPU accel for whisper — pulls in stt + whisper-rs backend feature.
+cuda = ["stt", "whisper-rs/cuda"]
+metal = ["stt", "whisper-rs/metal"]
